@@ -1,16 +1,21 @@
 #include "raylib.h"
-#define hight 
+#define height 800
+#define width 1500
+
 
 int main(void)
 {
-    InitWindow(800, 600, "Game");
+    InitWindow( width , height , "Game");
+    Texture2D footballField = LoadTexture("resources/Football_field.png");
     SetTargetFPS(60);
 
+    float fieldHeight =  height - 200;
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+        DrawTexture(footballField, 0 , 0, WHITE);
+        
         EndDrawing();
     }
 

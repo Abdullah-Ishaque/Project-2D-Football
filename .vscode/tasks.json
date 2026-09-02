@@ -16,7 +16,8 @@
         "-lwinmm",
         "-Wl,--defsym,stat64i32=_stat64",
         "-o",
-        "${workspaceFolder}/${fileBasenameNoExtension}.exe"
+        "${workspaceFolder}/${fileBasenameNoExtension}.exe",
+        "-std=c99"
       ],
       "options": {
         "cwd": "${workspaceFolder}",
