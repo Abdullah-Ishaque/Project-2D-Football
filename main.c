@@ -43,7 +43,7 @@ int main(void)
 
     Vector2 positionR6 = {913, 555.75};
 
-    Vector2 player_speed[6] = {0};
+    Vector2 player_speed[12] = {0};
 
     Vector2 launch_direction = Vector2Zero();
 
@@ -54,8 +54,8 @@ int main(void)
     float max_speed = 400.0;
     float power_speed = 7;
     Vector2 anchor_point = Vector2Zero();
-    int push_b[6] = {0};
-    Vector2 *positions[6] = {&positionB1, &positionB2, &positionB3, &positionB4, &positionB5, &positionB6};
+    int push[12] = {0};
+    Vector2 *positions[12] = {&positionB1, &positionB2, &positionB3, &positionB4, &positionB5, &positionB6, &positionR1,&positionR2,&positionR3,&positionR4,&positionR5,&positionR6};
 
     // CheckCollisionCircles(Vector2 center1, float radius1, Vector2 center2, float radius2);
 
@@ -69,18 +69,18 @@ int main(void)
 
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 12; i++)
             {
                 if (CheckCollisionPointCircle(mouse_position, *positions[i], radius))
                 {
                     is_dragging = true;
                     anchor_point = *positions[i];
                     player_speed[i] = Vector2Zero();
-                    for (int i = 0; i < 6; i++)
+                    for (int i = 0; i < 12; i++)
                     {
-                        push_b[i] = 0;
+                        push[i] = 0;
                     }
-                    push_b[i] = 1;
+                    push[i] = 1;
                 }
             }
 
@@ -135,14 +135,14 @@ int main(void)
         if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && is_dragging)
         {
             is_dragging = false;
-            dragged = Vector2Subtract(mouse_position, anchor_point);
+            // dragged = Vector2Subtract(mouse_position, anchor_point);
             float dragged_distance = Vector2Length(dragged);
             if (dragged_distance > 10)
             {
                 Vector2 dragged_direction = Vector2Normalize(dragged);
 
                 launch_direction = Vector2Negate(dragged_direction);
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < 12; i++)
                 {
 
                     player_speed[i] = Vector2Scale(launch_direction, power);
@@ -153,30 +153,30 @@ int main(void)
         if (!is_dragging)
         {
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 12; i++)
             {
 
-                if (push_b[i])
+                if (push[i])
                 {
                     *positions[i] = Vector2Add(*positions[i], Vector2Scale(player_speed[i], dt));
                 }
-                // else if (push_b[1])
+                // else if (push[1])
                 // {
                 //     positionB2 = Vector2Add(positionB2, Vector2Scale(player_speed, dt));
                 // }
-                // else if (push_b[2])
+                // else if (push[2])
                 // {
                 //     positionB3 = Vector2Add(positionB3, Vector2Scale(player_speed, dt));
                 // }
-                // else if (push_b[3])
+                // else if (push[3])
                 // {
                 //     positionB4 = Vector2Add(positionB4, Vector2Scale(player_speed, dt));
                 // }
-                // else if (push_b[4])
+                // else if (push[4])
                 // {
                 //     positionB5 = Vector2Add(positionB5, Vector2Scale(player_speed, dt));
                 // }
-                // else if (push_b[5])
+                // else if (push[5])
                 // {
                 //     positionB6 = Vector2Add(positionB6, Vector2Scale(player_speed, dt));
                 // }
@@ -184,12 +184,11 @@ int main(void)
                 if (((*positions[i]).x - radius < 50.2) || ((*positions[i]).x + radius > 1450.4))
                 {
                     player_speed[i].x *= -1;
-                    (*positions[i]).x = Clamp((*positions[i]).x, radius, 1450 - radius);
                 }
                 if (((*positions[i]).y - radius < 120) || ((*positions[i]).y + radius > 680))
                 {
                     player_speed[i].y *= -1;
-                    (*positions[i]).y = Clamp((*positions[i]).y, radius, 680 - radius);
+                    
                 }
             }
 
