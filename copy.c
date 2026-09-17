@@ -3,10 +3,12 @@
 #include "raymath.h"
 #define height 800
 #define width 1500
-#define border1X = 50.2;
-#define border2X = 1450.4;
+#define border1X 50.2
+#define border2X 1450.4
 #define border1Y 120
-#define border2Y = 680;
+#define border2Y 680
+#define radius 50
+#define ballRadius 30
 
 int main(void)
 {
@@ -18,7 +20,6 @@ int main(void)
 	int starting_click = 0;
 	int option_click = 0;
 	int turn = 1;
-	float radius = 40;
 
 	Vector2 positionB1 = {90.2, 405.75};
 
@@ -44,7 +45,11 @@ int main(void)
 
 	Vector2 positionR6 = {913, 555.75};
 
+	Vector2 ball = {749.5, 382};
+
 	Vector2 player_speed[12] = {0};
+
+	Vector2 ballSpeed = Vector2Zero();
 
 	Vector2 launch_direction = Vector2Zero();
 
@@ -54,14 +59,12 @@ int main(void)
 	bool shot_in_progress = false;
 
 	float power = 0.0;
-	float max_power = 700.0;
+	float max_power = 1000.0;
 	float max_speed = 400.0;
 	float power_speed = 7;
 	Vector2 anchor_point = Vector2Zero();
 	int push[12] = {0};
 	Vector2 *positions[12] = {&positionB1, &positionB2, &positionB3, &positionB4, &positionB5, &positionB6, &positionR1, &positionR2, &positionR3, &positionR4, &positionR5, &positionR6};
-
-	// CheckCollisionCircles(Vector2 center1, float radius1, Vector2 center2, float radius2);
 
 	SetTargetFPS(60);
 
@@ -87,43 +90,6 @@ int main(void)
 					push[i] = 1;
 				}
 			}
-
-			// else if (CheckCollisionPointCircle(mouse_position, positionR1, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR1;
-			//     player_speed = Vector2Zero();
-			// }
-			// else if (CheckCollisionPointCircle(mouse_position, positionR2, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR2;
-			//     player_speed = Vector2Zero();
-			// }
-			// else if (CheckCollisionPointCircle(mouse_position, positionR3, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR3;
-			//     player_speed = Vector2Zero();
-			// }
-			// else if (CheckCollisionPointCircle(mouse_position, positionR4, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR4;
-			//     player_speed = Vector2Zero();
-			// }
-			// else if (CheckCollisionPointCircle(mouse_position, positionR5, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR5;
-			//     player_speed = Vector2Zero();
-			// }
-			// else if (CheckCollisionPointCircle(mouse_position, positionR6, radius))
-			// {
-			//     is_dragging = true;
-			//     anchor_point = positionR6;
-			//     player_speed = Vector2Zero();
-			// }
 		}
 
 		if (is_dragging)
@@ -139,7 +105,6 @@ int main(void)
 		if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && is_dragging)
 		{
 			is_dragging = false;
-			// dragged = Vector2Subtract(mouse_position, anchor_point);
 			float dragged_distance = Vector2Length(dragged);
 			if (dragged_distance > 10)
 			{
@@ -155,60 +120,110 @@ int main(void)
 				}
 				shot_in_progress = true;
 			}
-
-			// power = 0;
 		}
 		if (!is_dragging)
 		{
+
 			for (int i = 0; i < 12; i++)
 			{
-				if (push[i])
+				for (int j = i + 1; j < 12; j++)
 				{
-					*positions[i] = Vector2Add(
-						*positions[i],
-						Vector2Scale(player_speed[i], dt));
+					if (CheckCollisionCircles(*positions[i], radius, *positions[j], radius))
+					{
+						Vector2 normal = Vector2Normalize(Vector2Subtract(*positions[j], *positions[i]));
+
+						Vector2 relativeVelocity = Vector2Subtract(player_speed[i], player_speed[j]);
+						float velAlongNormal = Vector2DotProduct(relativeVelocity, normal);
+
+						if (velAlongNormal > 0)
+						{
+							float restitution = 0.4;
+							float impulseMagnitude = (1.0 + restitution) * velAlongNormal;
+
+							impulseMagnitude /= 2.0;
+
+							Vector2 impulse = Vector2Scale(normal, impulseMagnitude);
+
+							player_speed[i] = Vector2Subtract(player_speed[i], impulse);
+							player_speed[j] = Vector2Add(player_speed[j], impulse);
+						}
+					}
 				}
+				if (CheckCollisionCircles(*positions[i], radius, ball, ballRadius))
+				{
+					Vector2 normal = Vector2Normalize(Vector2Subtract(ball, *positions[i]));
 
-				player_speed[i] = Vector2Scale(
-					player_speed[i],
-					1.0 - (1 * dt));
+					Vector2 relativeVelocity = Vector2Subtract(player_speed[i], ballSpeed);
+					float velAlongNormal = Vector2DotProduct(relativeVelocity, normal);
 
-				if (((*positions[i]).x - radius < 50.2) ||
-					((*positions[i]).x + radius > 1450.4))
+					if (velAlongNormal > 0)
+					{
+						float restitution = 0.4;
+						float impulseMagnitude = (1.0 + restitution) * velAlongNormal;
+
+						impulseMagnitude /= 10.66;
+
+						Vector2 impulse = Vector2Scale(normal, impulseMagnitude);
+
+						player_speed[i] = Vector2Subtract(player_speed[i], Vector2Scale(impulse, 1.0f));
+						ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
+					}
+				}
+			}
+			for (int i = 0; i < 12; i++)
+			{
+				*positions[i] = Vector2Add(
+					*positions[i],
+					Vector2Scale(player_speed[i], dt));
+				player_speed[i] = Vector2Scale(player_speed[i], 1.0 - (1 * dt));
+
+				if (((*positions[i]).x - radius < border1X) || ((*positions[i]).x + radius > border2X))
 				{
 					player_speed[i].x *= -1;
 				}
 
-				if (((*positions[i]).y - radius < 120) ||
-					((*positions[i]).y + radius > 680))
+				if (((*positions[i]).y - radius < border1Y) || ((*positions[i]).y + radius > border2Y))
 				{
 					player_speed[i].y *= -1;
 				}
 			}
-
-			// Check whether the shot has finished
-			if (shot_in_progress)
+			
+			ball = Vector2Add(ball, Vector2Scale(ballSpeed, dt));
+			ballSpeed = Vector2Scale(ballSpeed, 1.0 - (1 * dt));
+			// For ball
+			if (((ball).x - ballRadius < border1X) || ((ball).x + ballRadius > border2X))
 			{
-				bool player_stopped = true;
+				ballSpeed.x *= -1;
+			}
 
-				for (int i = 0; i < 12; i++)
-				{
-					if (push[i] && Vector2Length(player_speed[i]) > 5)
-					{
-						player_stopped = false;
-					}
-				}
-
-				if (player_stopped)
-				{
-					turn++;
-					shot_in_progress = false;
-
-					for (int i = 0; i < 12; i++)
-						push[i] = 0;
-				}
+			if (((ball).y - ballRadius < border1Y) || ((ball).y + ballRadius > border2Y))
+			{
+				ballSpeed.y *= -1;
 			}
 		}
+
+		if (shot_in_progress)
+		{
+			bool player_stopped = true;
+
+			for (int i = 0; i < 12; i++)
+			{
+				if (push[i] && Vector2Length(player_speed[i]) > 5)
+				{
+					player_stopped = false;
+				}
+			}
+
+			if (player_stopped)
+			{
+				turn++;
+				shot_in_progress = false;
+
+				for (int i = 0; i < 12; i++)
+					push[i] = 0;
+			}
+		}
+
 		BeginDrawing();
 		ClearBackground(RAYWHITE);
 
@@ -217,19 +232,6 @@ int main(void)
 			DrawTexture(intro, 0, 0, WHITE);
 			starting_click = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 		}
-		// if (starting_click && !option_click)
-		// {
-		//     Rectangle background = {0, 0, 1500, 800};
-		//     DrawRectangleRec(background, GREEN);
-		//     DrawTexture(option, 450, 250, WHITE);
-		// }
-		// if ((GetMouseX() >= 450 && GetMouseX() <= 1050) && (GetMouseY() >= 250 && GetMouseY() <= 550) && !option_click)
-		// {
-		//     option_click = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-		// }
-		// printf("%d" , option_click);
-		// printf("%d\n" , GetMouseX());
-    
 		if (starting_click)
 		{
 			DrawTexture(football_Field, 0, 0, WHITE);
@@ -246,6 +248,7 @@ int main(void)
 			DrawCircleV(positionR4, radius, RED);
 			DrawCircleV(positionR5, radius, RED);
 			DrawCircleV(positionR6, radius, RED);
+			DrawCircleV(ball, ballRadius, RAYWHITE);
 		}
 
 		EndDrawing();
