@@ -57,7 +57,6 @@ int main(void)
     int push[12] = {0};
     Vector2 *positions[12] = {&positionB1, &positionB2, &positionB3, &positionB4, &positionB5, &positionB6, &positionR1,&positionR2,&positionR3,&positionR4,&positionR5,&positionR6};
 
-    // CheckCollisionCircles(Vector2 center1, float radius1, Vector2 center2, float radius2);
 
     SetTargetFPS(60);
 
@@ -83,43 +82,7 @@ int main(void)
                     push[i] = 1;
                 }
             }
-
-            // else if (CheckCollisionPointCircle(mouse_position, positionR1, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR1;
-            //     player_speed = Vector2Zero();
-            // }
-            // else if (CheckCollisionPointCircle(mouse_position, positionR2, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR2;
-            //     player_speed = Vector2Zero();
-            // }
-            // else if (CheckCollisionPointCircle(mouse_position, positionR3, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR3;
-            //     player_speed = Vector2Zero();
-            // }
-            // else if (CheckCollisionPointCircle(mouse_position, positionR4, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR4;
-            //     player_speed = Vector2Zero();
-            // }
-            // else if (CheckCollisionPointCircle(mouse_position, positionR5, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR5;
-            //     player_speed = Vector2Zero();
-            // }
-            // else if (CheckCollisionPointCircle(mouse_position, positionR6, radius))
-            // {
-            //     is_dragging = true;
-            //     anchor_point = positionR6;
-            //     player_speed = Vector2Zero();
-            // }
+          
         }
 
         if (is_dragging)
@@ -148,7 +111,7 @@ int main(void)
                     player_speed[i] = Vector2Scale(launch_direction, power);
                 }
             }
-            // power = 0;
+            
         }
         if (!is_dragging)
         {
@@ -160,26 +123,6 @@ int main(void)
                 {
                     *positions[i] = Vector2Add(*positions[i], Vector2Scale(player_speed[i], dt));
                 }
-                // else if (push[1])
-                // {
-                //     positionB2 = Vector2Add(positionB2, Vector2Scale(player_speed, dt));
-                // }
-                // else if (push[2])
-                // {
-                //     positionB3 = Vector2Add(positionB3, Vector2Scale(player_speed, dt));
-                // }
-                // else if (push[3])
-                // {
-                //     positionB4 = Vector2Add(positionB4, Vector2Scale(player_speed, dt));
-                // }
-                // else if (push[4])
-                // {
-                //     positionB5 = Vector2Add(positionB5, Vector2Scale(player_speed, dt));
-                // }
-                // else if (push[5])
-                // {
-                //     positionB6 = Vector2Add(positionB6, Vector2Scale(player_speed, dt));
-                // }
                 player_speed[i] = Vector2Scale(player_speed[i], 1.0 - (1 * dt));
                 if (((*positions[i]).x - radius < 50.2) || ((*positions[i]).x + radius > 1450.4))
                 {
@@ -191,67 +134,6 @@ int main(void)
                     
                 }
             }
-
-            // if ((positionB1.x - radius < 50.2) || (positionB1.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB1.x = Clamp(positionB1.x, radius, 1450 - radius);
-            // }
-            // if ((positionB1.y - radius < 120) || (positionB1.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB1.y = Clamp(positionB1.y, radius, 680 - radius);
-            // }
-            // if ((positionB2.x - radius < 50.2) || (positionB2.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB2.x = Clamp(positionB2.x, radius, 1450 - radius);
-            // }
-            // if ((positionB2.y - radius < 120) || (positionB2.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB2.y = Clamp(positionB2.y, radius, 680 - radius);
-            // }
-            // if ((positionB3.x - radius < 50.2) || (positionB3.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB3.x = Clamp(positionB3.x, radius, 1450 - radius);
-            // }
-            // if ((positionB3.y - radius < 120) || (positionB3.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB3.y = Clamp(positionB3.y, radius, 680 - radius);
-            // }
-            // if ((positionB4.x - radius < 50.2) || (positionB4.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB4.x = Clamp(positionB4.x, radius, 1450 - radius);
-            // }
-            // if ((positionB4.y - radius < 120) || (positionB4.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB4.y = Clamp(positionB4.y, radius, 680 - radius);
-            // }
-            // if ((positionB5.x - radius < 50.2) || (positionB5.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB5.x = Clamp(positionB5.x, radius, 1450 - radius);
-            // }
-            // if ((positionB5.y - radius < 120) || (positionB5.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB5.y = Clamp(positionB5.y, radius, 680 - radius);
-            // }
-            // if ((positionB6.x - radius < 50.2) || (positionB6.x + radius > 1450.4))
-            // {
-            //     player_speed.x *= -1;
-            //     positionB6.x = Clamp(positionB6.x, radius, 1450 - radius);
-            // }
-            // if ((positionB6.y - radius < 120) || (positionB6.y + radius > 680))
-            // {
-            //     player_speed.y *= -1;
-            //     positionB6.y = Clamp(positionB6.y, radius, 680 - radius);
-            // }
         }
 
         BeginDrawing();
@@ -262,18 +144,7 @@ int main(void)
             DrawTexture(intro, 0, 0, WHITE);
             starting_click = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
         }
-        // if (starting_click && !option_click)
-        // {
-        //     Rectangle background = {0, 0, 1500, 800};
-        //     DrawRectangleRec(background, GREEN);
-        //     DrawTexture(option, 450, 250, WHITE);
-        // }
-        // if ((GetMouseX() >= 450 && GetMouseX() <= 1050) && (GetMouseY() >= 250 && GetMouseY() <= 550) && !option_click)
-        // {
-        //     option_click = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-        // }
-        // printf("%d" , option_click);
-        // printf("%d\n" , GetMouseX());
+        
         if (starting_click)
         {
             DrawTexture(football_Field, 0, 0, WHITE);
