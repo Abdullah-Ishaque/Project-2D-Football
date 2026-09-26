@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "raylib.h"
 #include "raymath.h"
 #define height 800
@@ -7,47 +8,127 @@
 #define border2X 1450.4
 #define border1Y 120
 #define border2Y 680
-#define radius 40
+#define playerRadius 40
 #define ballRadius 25
 #define goalTop 290
 #define goalBottom 570
+#define PLAYER_COUNT 6
+#define FORMATION_COUNT 5
+#define buttonStartingPosition 590
+#define formationWidth 240
+#define formationHeight 400
+
+typedef enum
+{
+    STARTING,
+    MENU,
+    PLAY,
+    TUTORIAL,
+    ABOUT,
+    CREDIT,
+    GAMEPLAY,
+    GAMEOVER
+} Screen;
+Screen screen = STARTING;
 
 int main(void)
 {
     InitWindow(width, height, "Game");
-    Texture2D football_Field = LoadTexture("resources/Football_field1.png");
-    Texture2D intro = LoadTexture("resources/Start1.png");
-    Texture2D option = LoadTexture("resources/Option.png");
+    InitAudioDevice();
 
-    int starting_click = 0;
-    int option_click = 0;
+    Sound kickSound = LoadSound("resources/sounds/kick.wav");
+    Sound collisionSound = LoadSound("resources/sounds/collision.wav");
+    Sound goalSound = LoadSound("resources/sounds/goal.wav");
+    Texture2D football_Field = LoadTexture("resources/Football_field.png");
+    Texture2D intro = LoadTexture("resources/Start1.png");
+    Texture2D tutorial = LoadTexture("resources/Tutorial.png");
+    Texture2D sakib = LoadTexture("resources/Sakib_36.png");
+    Texture2D ishaque = LoadTexture("resources/Ishaque_58.png");
+    Texture2D FormationB[5], FormationR[5];
+    for (int i = 0; i < 5; i++)
+    {
+        FormationB[i] = LoadTexture(TextFormat("resources/blue-formation%d.png", i + 1));
+        FormationR[i] = LoadTexture(TextFormat("resources/red-formation%d.png", i + 1));
+    }
+
     int turn = 1;
 
     int blueScore = 0;
     int redScore = 0;
 
-    // BLUE — 3-1-1
-    Vector2 positionB1 = {90.2, 405.75}; // GK
+    int menuWidth = 700;
+    int menuHeight = 500;
+    int buttonWidth = 320;
+    int buttonHeight = 70;
+    int backButtonWidth = 180;
+    int backButtonHeight = 55;
 
-    Vector2 positionB2 = {290, 220};    // Defender
-    Vector2 positionB3 = {290, 405.75}; // Defender
-    Vector2 positionB4 = {290, 590};    // Defender
+    int menuX = (1500 - menuWidth) / 2;
+    int menuY = (800 - menuHeight) / 2;
+    int formationInitial = 110;
 
-    Vector2 positionB5 = {470, 405.75}; // Midfielder
+    // Custom made color
+    Color screenBackground = {10, 15, 25, 255};
+    Color menuBackground = {20, 25, 35, 245};
+    Color playButtonColor, tutorialButtonColor, aboutButtonColor, backButtonColor, creditButtonColor;
+    Color buttonBorderColor = {35, 45, 60, 255};
+    Color buttonBorderHoverColor = {35, 45, 100, 255};
+    Color textColor = {50, 60, 120, 240};
+    Color backButtonColorUni = {200, 100, 40, 245};
+    Color aboutText = {83, 83, 181, 245};
+    //
+    Rectangle targetScoreBox = {700, 150, 100, 55};
+    Rectangle formations[FORMATION_COUNT];
+    Vector2 positions[12];
+    for (int i = 0; i < FORMATION_COUNT; i++)
+    {
+        formations[i] = (Rectangle){formationInitial + (i * 260), 220, 240, 400};
+    }
+    Vector2 blueFormations[FORMATION_COUNT][PLAYER_COUNT] =
+        {
 
-    Vector2 positionB6 = {620, 405.75}; // Striker
+            {{90.2, 405.75},
+             {289.15, 255.75},
+             {289.15, 555.75},
+             {587.05, 255.75},
+             {438.1, 405.75},
+             {587.05, 555.75}},
+            {{90.2, 405.75},
+             {290, 220},
+             {290, 405.75},
+             {290, 590},
+             {470, 405.75},
+             {620, 405.75}},
+            {{90.2, 405.75},
+             {285, 270},
+             {285, 540},
+             {460, 270},
+             {460, 540},
+             {620, 405.75}},
+            {{90.2, 405.75},
+             {300, 405.75},
+             {480, 220},
+             {480, 405.75},
+             {480, 590},
+             {635, 405.75}},
+            {{90.2, 405.75},
+             {300, 405.75},
+             {455, 405.75},
+             {620, 220},
+             {620, 405.75},
+             {620, 590}}};
+    Vector2 redFormations[FORMATION_COUNT][PLAYER_COUNT];
+    for (int f = 0; f < FORMATION_COUNT; f++)
+    {
+        for (int g = 0; g < PLAYER_COUNT; g++)
+        {
+            redFormations[f][g].x =
+                width - blueFormations[f][g].x;
 
-    // RED — 3-1-1
-    Vector2 positionR1 = {1409.8, 405.75}; // GK
-
-    Vector2 positionR2 = {1210, 220};    // Defender
-    Vector2 positionR3 = {1210, 405.75}; // Defender
-    Vector2 positionR4 = {1210, 590};    // Defender
-
-    Vector2 positionR5 = {1030, 405.75}; // Midfielder
-
-    Vector2 positionR6 = {880, 405.75}; // Striker
-
+            redFormations[f][g].y =
+                blueFormations[f][g].y;
+        }
+    }
     Vector2 ball = {750.3, 400};
 
     Vector2 player_speed[12] = {0};
@@ -67,75 +148,316 @@ int main(void)
     float power_speed = 7;
     Vector2 anchor_point = Vector2Zero();
     int push[12] = {0};
-    Vector2 *positions[12] = {&positionB1, &positionB2, &positionB3, &positionB4, &positionB5, &positionB6, &positionR1, &positionR2, &positionR3, &positionR4, &positionR5, &positionR6};
+
+    Rectangle playButton = {590, 245, 320, 70};
+    Rectangle tutorialButton = {590, 325, 320, 70};
+    Rectangle aboutButton = {590, 405, 320, 70};
+    Rectangle creditButton = {590, 485, 320, 70};
+    Rectangle backButton = {30, 715, 180, 55};
+
+    int targetScore = 5;
+    char targetScoreText[10] = "5";
+    int targetScoreLength = 1;
+    bool targetScoreEditing = false;
+    bool targetScoreStarted = false;
+
+    int formationChoice[2] = {0, 0};
+    int currentPicker = 0;
 
     SetTargetFPS(60);
 
     float fieldHeight = height - 200;
+
     while (!WindowShouldClose())
     {
         float dt = GetFrameTime();
         Vector2 mouse_position = GetMousePosition();
-
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        float anchor = Vector2Length(anchor_point);
+        float launch = Vector2Length(launch_direction);
+        float endx = 2 * anchor_point.x - mouse_position.x;
+        float endy = 2 * anchor_point.y - mouse_position.y;
+        Vector2 end = {endx, endy};
+        if (Vector2Length(end) > 20)
         {
-            for (int i = 0; i < 12; i++)
+            endx = (anchor_point.x + endx) / 2;
+            endy = (anchor_point.y + endy) / 2;
+        }
+
+        backButtonColor = CheckCollisionPointRec(mouse_position, backButton) ? backButtonColorUni : BLUE;
+        if (screen == STARTING)
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                if (CheckCollisionPointCircle(mouse_position, *positions[i], radius) && ((turn % 2 == 1 && i < 6) || (turn % 2 == 0 && i >= 6)))
+                screen = MENU;
+            }
+        }
+        // =======================================================================MENU==================================================================
+        else if (screen == MENU)
+        {
+            playButtonColor = CheckCollisionPointRec(mouse_position, playButton) ? buttonBorderHoverColor : buttonBorderColor;
+            tutorialButtonColor = CheckCollisionPointRec(mouse_position, tutorialButton) ? buttonBorderHoverColor : buttonBorderColor;
+            aboutButtonColor = CheckCollisionPointRec(mouse_position, aboutButton) ? buttonBorderHoverColor : buttonBorderColor;
+            creditButtonColor = CheckCollisionPointRec(mouse_position, creditButton) ? buttonBorderHoverColor : buttonBorderColor;
+            if (CheckCollisionPointRec(mouse_position, playButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 {
-                    is_dragging = true;
-                    anchor_point = *positions[i];
-                    player_speed[i] = Vector2Zero();
-                    for (int i = 0; i < 12; i++)
+                    screen = PLAY;
+                }
+            }
+            else if (CheckCollisionPointRec(mouse_position, tutorialButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = TUTORIAL;
+                }
+            }
+            else if (CheckCollisionPointRec(mouse_position, aboutButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = ABOUT;
+                }
+            }
+            else if (CheckCollisionPointRec(mouse_position, creditButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = CREDIT;
+                }
+            }
+        }
+        // =======================================================================PLAY==================================================================
+        else if (screen == PLAY)
+        {
+            if (CheckCollisionPointRec(mouse_position, targetScoreBox))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    targetScoreEditing = true;
+
+                if (!targetScoreStarted)
+                {
+                    targetScoreLength = 0;
+                    targetScoreText[0] = '\0';
+                    targetScoreStarted = true;
+                }
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                targetScoreEditing = false;
+            }
+
+            if (targetScoreEditing)
+            {
+                int key = GetCharPressed();
+
+                while (key > 0)
+                {
+                    if (key >= '0' && key <= '9' && targetScoreLength < 9)
                     {
-                        push[i] = 0;
+                        targetScoreText[targetScoreLength] = (char)key;
+                        targetScoreLength++;
+                        targetScoreText[targetScoreLength] = '\0';
                     }
-                    push[i] = 1;
+                    key = GetCharPressed();
+                }
+
+                if (IsKeyPressed(KEY_BACKSPACE) && targetScoreLength > 0)
+                {
+                    targetScoreLength--;
+                    targetScoreText[targetScoreLength] = '\0';
+                }
+
+                if (targetScoreLength > 0)
+                {
+                    targetScore = atoi(targetScoreText);
+
+                    if (targetScore < 1)
+                        targetScore = 1;
+                }
+                else
+                    targetScore = 0;
+            }
+            for (int j = 0; j < FORMATION_COUNT; j++)
+            {
+                if (CheckCollisionPointRec(mouse_position, formations[j]))
+                {
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    {
+                        if (!currentPicker)
+                        {
+                            formationChoice[0] = j;
+
+                            for (int l = 0; l < PLAYER_COUNT; l++)
+                            {
+                                positions[l] = blueFormations[j][l];
+                            }
+                            currentPicker = 1;
+                        }
+                        else
+                        {
+                            formationChoice[1] = j;
+
+                            for (int m = 0, n = 6; m < PLAYER_COUNT; m++, n++)
+                                positions[n] = redFormations[j][m];
+
+                            currentPicker = 0;
+                            screen = GAMEPLAY;
+                            if (CheckCollisionPointRec(mouse_position, backButton))
+                            {
+                                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                                {
+                                    screen = PLAY;
+                                }
+                            }
+                            else
+                                screen = GAMEPLAY;
+                        }
+                    }
+                }
+                else
+                {
+                    if (CheckCollisionPointRec(mouse_position, backButton))
+                    {
+                        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && currentPicker == 0)
+                        {
+                            screen = MENU;
+                            break;
+                        }
+                        else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && currentPicker == 1)
+                        {
+                            currentPicker = 0;
+                            screen = PLAY;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // =======================================================================TUTORIAL==================================================================
+        else if (screen == TUTORIAL)
+        {
+            DrawTexture(tutorial, 0, 0, RAYWHITE);
+            if (CheckCollisionPointRec(mouse_position, backButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = MENU;
                 }
             }
         }
 
-        if (is_dragging)
-        {
-            dragged = Vector2Subtract(mouse_position, anchor_point);
-            power = power_speed * Vector2Length(dragged);
+        // =======================================================================ABOUT==================================================================
 
-            if (power > max_power)
+        else if (screen == ABOUT)
+        {
+            if (CheckCollisionPointRec(mouse_position, backButton))
             {
-                power = max_power;
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = MENU;
+                }
             }
         }
-        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && is_dragging)
+        // =======================================================================CREDIT==================================================================
+        else if (screen == CREDIT)
         {
-            is_dragging = false;
-            float dragged_distance = Vector2Length(dragged);
-            if (dragged_distance > 10)
+            if (CheckCollisionPointRec(mouse_position, backButton))
             {
-                Vector2 dragged_direction = Vector2Normalize(dragged);
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = MENU;
+                }
+            }
+        }
 
-                launch_direction = Vector2Negate(dragged_direction);
+        // =======================================================================GAMEPLAY==================================================================
+        else if (screen == GAMEPLAY)
+        {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
                 for (int i = 0; i < 12; i++)
                 {
-                    if (push[i])
+                    if (CheckCollisionPointCircle(mouse_position, positions[i], playerRadius) && ((turn % 2 == 1 && i < 6) || (turn % 2 == 0 && i >= 6)))
                     {
-                        player_speed[i] = Vector2Scale(launch_direction, power);
+                        is_dragging = true;
+                        anchor_point = positions[i];
+                        player_speed[i] = Vector2Zero();
+                        for (int i = 0; i < 12; i++)
+                        {
+                            push[i] = 0;
+                        }
+                        push[i] = 1;
                     }
                 }
-                shot_in_progress = true;
             }
-        }
-        if (!is_dragging)
-        {
 
-            for (int i = 0; i < 12; i++)
+            if (is_dragging)
             {
-                for (int j = i + 1; j < 12; j++)
-                {
-                    if (CheckCollisionCircles(*positions[i], radius, *positions[j], radius))
-                    {
-                        Vector2 normal = Vector2Normalize(Vector2Subtract(*positions[j], *positions[i]));
+                dragged = Vector2Subtract(mouse_position, anchor_point);
+                power = power_speed * Vector2Length(dragged);
 
-                        Vector2 relativeVelocity = Vector2Subtract(player_speed[i], player_speed[j]);
+                if (power > max_power)
+                {
+                    power = max_power;
+                }
+            }
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && is_dragging)
+            {
+                is_dragging = false;
+                float dragged_distance = Vector2Length(dragged);
+                if (dragged_distance > 10)
+                {
+                    Vector2 dragged_direction = Vector2Normalize(dragged);
+
+                    launch_direction = Vector2Negate(dragged_direction);
+                    for (int i = 0; i < 12; i++)
+                    {
+                        if (push[i])
+                        {
+                            player_speed[i] = Vector2Scale(launch_direction, power);
+                        }
+                    }
+
+                    PlaySound(kickSound);
+                    shot_in_progress = true;
+                }
+            }
+            if (!is_dragging)
+            {
+
+                for (int i = 0; i < 12; i++)
+                {
+                    for (int j = i + 1; j < 12; j++)
+                    {
+                        if (CheckCollisionCircles(positions[i], playerRadius, positions[j], playerRadius))
+                        {
+                            Vector2 normal = Vector2Normalize(Vector2Subtract(positions[j], positions[i]));
+
+                            Vector2 relativeVelocity = Vector2Subtract(player_speed[i], player_speed[j]);
+                            float velAlongNormal = Vector2DotProduct(relativeVelocity, normal);
+
+                            if (velAlongNormal > 0)
+                            {
+                                float restitution = 0.4f;
+                                float impulseMagnitude = (1.0f + restitution) * velAlongNormal;
+
+                                impulseMagnitude /= 2.0f;
+
+                                Vector2 impulse = Vector2Scale(normal, impulseMagnitude);
+
+                                player_speed[i] = Vector2Subtract(player_speed[i], impulse);
+                                player_speed[j] = Vector2Add(player_speed[j], impulse);
+
+                                PlaySound(collisionSound);
+                            }
+                        }
+                    }
+                    if (CheckCollisionCircles(positions[i], playerRadius, ball, ballRadius))
+                    {
+                        Vector2 normal = Vector2Normalize(Vector2Subtract(ball, positions[i]));
+
+                        Vector2 relativeVelocity = Vector2Subtract(player_speed[i], ballSpeed);
                         float velAlongNormal = Vector2DotProduct(relativeVelocity, normal);
 
                         if (velAlongNormal > 0)
@@ -143,169 +465,268 @@ int main(void)
                             float restitution = 0.4f;
                             float impulseMagnitude = (1.0f + restitution) * velAlongNormal;
 
-                            impulseMagnitude /= 2.0f;
+                            impulseMagnitude /= 10.66f;
 
                             Vector2 impulse = Vector2Scale(normal, impulseMagnitude);
 
-                            player_speed[i] = Vector2Subtract(player_speed[i], impulse);
-                            player_speed[j] = Vector2Add(player_speed[j], impulse);
+                            player_speed[i] = Vector2Subtract(player_speed[i], Vector2Scale(impulse, 1.0f));
+                            ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
                         }
                     }
+                    anchor = 0;
+                    launch = 0;
                 }
-                if (CheckCollisionCircles(*positions[i], radius, ball, ballRadius))
+                for (int i = 0; i < 12; i++)
                 {
-                    Vector2 normal = Vector2Normalize(Vector2Subtract(ball, *positions[i]));
+                    positions[i] = Vector2Add(
+                        positions[i],
+                        Vector2Scale(player_speed[i], dt));
+                    player_speed[i] = Vector2Scale(player_speed[i], 1.0f - (1 * dt));
 
-                    Vector2 relativeVelocity = Vector2Subtract(player_speed[i], ballSpeed);
-                    float velAlongNormal = Vector2DotProduct(relativeVelocity, normal);
-
-                    if (velAlongNormal > 0)
+                    if ((positions[i]).x - playerRadius < border1X)
                     {
-                        float restitution = 0.4f;
-                        float impulseMagnitude = (1.0f + restitution) * velAlongNormal;
+                        (positions[i]).x = border1X + playerRadius;
+                        player_speed[i].x *= -1;
+                    }
+                    else if ((positions[i]).x + playerRadius > border2X)
+                    {
+                        (positions[i]).x = border2X - playerRadius;
+                        player_speed[i].x *= -1;
+                    }
 
-                        impulseMagnitude /= 10.66f;
-
-                        Vector2 impulse = Vector2Scale(normal, impulseMagnitude);
-
-                        player_speed[i] = Vector2Subtract(player_speed[i], Vector2Scale(impulse, 1.0f));
-                        ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
+                    if ((positions[i]).y - playerRadius < border1Y)
+                    {
+                        (positions[i]).y = border1Y + playerRadius;
+                        player_speed[i].y *= -1;
+                    }
+                    else if ((positions[i]).y + playerRadius > border2Y)
+                    {
+                        (positions[i]).y = border2Y - playerRadius;
+                        player_speed[i].y *= -1;
                     }
                 }
-            }
-            for (int i = 0; i < 12; i++)
-            {
-                *positions[i] = Vector2Add(
-                    *positions[i],
-                    Vector2Scale(player_speed[i], dt));
-                player_speed[i] = Vector2Scale(player_speed[i], 1.0f - (1 * dt));
 
-                if ((*positions[i]).x - radius < border1X)
+                ball = Vector2Add(ball, Vector2Scale(ballSpeed, dt));
+                ballSpeed = Vector2Scale(ballSpeed, 1.0f - (1 * dt));
+                // For ball
+
+                if (ball.x - ballRadius < border1X)
                 {
-                    (*positions[i]).x = border1X + radius;
-                    player_speed[i].x *= -1;
+                    if (ball.y - ballRadius > goalTop &&
+                        ball.y + ballRadius < goalBottom)
+                    {
+                        redScore++;
+
+                        for (int i = 0; i < PLAYER_COUNT; i++)
+                        {
+                            positions[i] = blueFormations[formationChoice[0]][i];
+                            positions[i + PLAYER_COUNT] = redFormations[formationChoice[1]][i];
+                        }
+
+                        for (int i = 0; i < 12; i++)
+                        {
+                            player_speed[i] = Vector2Zero();
+                            push[i] = 0;
+                        }
+
+                        ball = (Vector2){749.5, 382};
+                        ballSpeed = Vector2Zero();
+
+                        shot_in_progress = false;
+                        is_dragging = false;
+
+                        turn = 1;
+                    }
+                    else
+                    {
+                        ball.x = border1X + ballRadius;
+                        ballSpeed.x *= -1;
+                    }
                 }
-                else if ((*positions[i]).x + radius > border2X)
+                else if (ball.x + ballRadius > border2X)
                 {
-                    (*positions[i]).x = border2X - radius;
-                    player_speed[i].x *= -1;
+                    if (ball.y - ballRadius > goalTop &&
+                        ball.y + ballRadius < goalBottom)
+                    {
+                        blueScore++;
+
+                        for (int i = 0; i < PLAYER_COUNT; i++)
+                        {
+                            positions[i] = blueFormations[formationChoice[0]][i];
+                            positions[i + PLAYER_COUNT] = redFormations[formationChoice[1]][i];
+                        }
+
+                        for (int i = 0; i < 12; i++)
+                        {
+                            player_speed[i] = Vector2Zero();
+                            push[i] = 0;
+                        }
+
+                        ball = (Vector2){749.5, 382};
+                        ballSpeed = Vector2Zero();
+
+                        shot_in_progress = false;
+                        is_dragging = false;
+
+                        turn = 2;
+
+                        if (blueScore >= targetScore)
+                        {
+                            screen = GAMEOVER;
+                        }
+                    }
+                    else
+                    {
+                        ball.x = border2X - ballRadius;
+                        ballSpeed.x *= -1;
+                    }
                 }
 
-                if ((*positions[i]).y - radius < border1Y)
+                if (ball.y - ballRadius < border1Y)
                 {
-                    (*positions[i]).y = border1Y + radius;
-                    player_speed[i].y *= -1;
+                    ball.y = border1Y + ballRadius;
+                    ballSpeed.y *= -1;
                 }
-                else if ((*positions[i]).y + radius > border2Y)
+                else if (ball.y + ballRadius > border2Y)
                 {
-                    (*positions[i]).y = border2Y - radius;
-                    player_speed[i].y *= -1;
-                }
-            }
-
-            ball = Vector2Add(ball, Vector2Scale(ballSpeed, dt));
-            ballSpeed = Vector2Scale(ballSpeed, 1.0f - (1 * dt));
-            // For ball
-
-            if (ball.x - ballRadius < border1X)
-            {
-                if (ball.y - ballRadius > goalTop &&
-                    ball.y + ballRadius < goalBottom)
-                {
-                    redScore++;
-
-                    ball = (Vector2){749.5, 382};
-                    ballSpeed = Vector2Zero();
-                }
-                else
-                {
-                    ball.x = border1X + ballRadius;
-                    ballSpeed.x *= -1;
-                }
-            }
-            else if (ball.x + ballRadius > border2X)
-            {
-                if (ball.y - ballRadius > goalTop &&
-                    ball.y + ballRadius < goalBottom)
-                {
-                    blueScore++;
-
-                    ball = (Vector2){749.5, 382};
-                    ballSpeed = Vector2Zero();
-                }
-                else
-                {
-                    ball.x = border2X - ballRadius;
-                    ballSpeed.x *= -1;
-                }
-            }
-
-            if (ball.y - ballRadius < border1Y)
-            {
-                ball.y = border1Y + ballRadius;
-                ballSpeed.y *= -1;
-            }
-            else if (ball.y + ballRadius > border2Y)
-            {
-                ball.y = border2Y - ballRadius;
-                ballSpeed.y *= -1;
-            }
-        }
-
-        if (shot_in_progress)
-        {
-            bool player_stopped = true;
-
-            for (int i = 0; i < 12; i++)
-            {
-                if (push[i] && Vector2Length(player_speed[i]) > 5)
-                {
-                    player_stopped = false;
+                    ball.y = border2Y - ballRadius;
+                    ballSpeed.y *= -1;
                 }
             }
 
-            if (player_stopped)
+            if (shot_in_progress)
             {
-                turn++;
-                shot_in_progress = false;
+                bool player_stopped = true;
 
                 for (int i = 0; i < 12; i++)
-                    push[i] = 0;
+                {
+                    if (push[i] && Vector2Length(player_speed[i]) > 5)
+                    {
+                        player_stopped = false;
+                    }
+                }
+
+                if (player_stopped)
+                {
+                    turn++;
+                    shot_in_progress = false;
+                    is_dragging = false;
+
+                    for (int i = 0; i < 12; i++)
+                        push[i] = 0;
+                }
             }
         }
+
+        // =======================================================================DRAWING==================================================================
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        if (!starting_click)
+        if (screen == STARTING)
         {
             DrawTexture(intro, 0, 0, WHITE);
-            starting_click = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
         }
-        if (starting_click)
+        else if (screen == MENU)
+        {
+            ClearBackground(screenBackground);
+            DrawRectangle(menuX, menuY, menuWidth, menuHeight, menuBackground);
+            DrawText("MAIN MENU", 635, 175, 42, RAYWHITE);
+            DrawRectangleRoundedLinesEx(playButton, 0.8, 0.8, 5.0, playButtonColor);
+            DrawRectangleRoundedLinesEx(tutorialButton, 0.8, 0.8, 5.0, tutorialButtonColor);
+            DrawRectangleRoundedLinesEx(aboutButton, 0.8, 0.8, 5.0, aboutButtonColor);
+            DrawRectangleRoundedLinesEx(creditButton, 0.8, 0.8, 5.0, creditButtonColor);
+            DrawText("PLAY", 712, 264, 32, textColor);
+            DrawText("TUTORIAL", 660, 344, 32, textColor);
+            DrawText("ABOUT US", 670, 424, 32, textColor);
+            DrawText("CREDIT", 690, 504, 32, textColor);
+        }
+        else if (screen == PLAY)
+        {
+            ClearBackground(screenBackground);
+            DrawText("TARGET SCORE", 650, 70, 30, RAYWHITE);
+
+            DrawRectangleRounded(targetScoreBox, 0.2f, 10, RAYWHITE);
+
+            DrawRectangleRoundedLinesEx(targetScoreBox, 0.2f, 10, 3.0f, targetScoreEditing ? BLUE : LIGHTGRAY);
+
+            DrawText(targetScoreText, 735, 163, 25, BLACK);
+
+            if (!currentPicker)
+            {
+                for (int i = 0; i < FORMATION_COUNT; i++)
+                {
+                    DrawTexture(FormationB[i], formationInitial + (i * 260), 220, WHITE);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < FORMATION_COUNT; i++)
+                {
+                    DrawTexture(FormationR[i], formationInitial + (i * 260), 220, WHITE);
+                }
+            }
+            DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
+            DrawText("BACK", 82, 728, 30, RAYWHITE);
+        }
+        else if (screen == TUTORIAL)
+        {
+            ClearBackground(screenBackground);
+            DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
+            DrawText("BACK", 82, 728, 30, RAYWHITE);
+        }
+        else if (screen == ABOUT)
+        {
+            ClearBackground(screenBackground);
+            DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
+            DrawText("BACK", 82, 728, 30, RAYWHITE);
+
+            DrawText("ABOUT US", 635, 50, 42, RAYWHITE);
+
+            DrawText("Developers of Football 2D", 555, 100, 28, LIGHTGRAY);
+
+            DrawTexture(sakib, 250, 140, WHITE);
+            DrawTexture(ishaque, 950, 140, WHITE);
+
+            DrawText("SAKIB", 350, 545, 30, aboutText);
+            DrawText("ISHAQUE", 1040, 545, 30, aboutText);
+
+            DrawText("Roll: 2505036", 345, 585, 26, aboutText);
+            DrawText("Roll: 2505058", 1040, 585, 26, aboutText);
+        }
+        else if (screen == CREDIT)
+        {
+            ClearBackground(screenBackground);
+            DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
+            DrawText("BACK", 82, 728, 30, RAYWHITE);
+        }
+        else if (screen == GAMEPLAY)
         {
             DrawTexture(football_Field, 0, 0, WHITE);
-            DrawText("Football 2D", 650, 50, 50, BLUE);
-            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 100, 30, BLACK);
-
-            DrawCircleV(positionB1, radius, BLUE);
-            DrawCircleV(positionB2, radius, BLUE);
-            DrawCircleV(positionB3, radius, BLUE);
-            DrawCircleV(positionB4, radius, BLUE);
-            DrawCircleV(positionB5, radius, BLUE);
-            DrawCircleV(positionB6, radius, BLUE);
-            DrawCircleV(positionR1, radius, RED);
-            DrawCircleV(positionR2, radius, RED);
-            DrawCircleV(positionR3, radius, RED);
-            DrawCircleV(positionR4, radius, RED);
-            DrawCircleV(positionR5, radius, RED);
-            DrawCircleV(positionR6, radius, RED);
+            for (int i = 0; i < 12; i++)
+            {
+                DrawCircleV(positions[i], playerRadius, (i < 6) ? BLUE : RED);
+            }
             DrawCircleV(ball, ballRadius, RAYWHITE);
+            if (anchor != 0)
+            {
+                DrawLineV(mouse_position, anchor_point, GRAY);
+            }
+            if (launch != 0)
+            {
+                DrawLine(anchor_point.x, anchor_point.y, endx, endy, GRAY);
+            }
+
+            DrawText("Football 2D", 650, 20, 40, BLUE);
+            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 70, 30, BLACK);
+            DrawText(TextFormat("TARGET: %d", targetScore), 70, 50, 25, BLACK);
         }
 
         EndDrawing();
     }
-
+    UnloadSound(kickSound);
+    UnloadSound(collisionSound);
+    CloseAudioDevice();
     CloseWindow();
 
     return 0;

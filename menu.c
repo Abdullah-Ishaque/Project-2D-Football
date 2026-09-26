@@ -129,6 +129,8 @@ int main(void)
 
     Vector2 launch_direction = Vector2Zero();
 
+    Vector2 anchor_point = Vector2Zero();
+
     bool is_dragging = false;
     Vector2 dragged = Vector2Zero();
 
@@ -138,7 +140,6 @@ int main(void)
     float max_power = 1000.0f;
     float max_speed = 400.0f;
     float power_speed = 7;
-    Vector2 anchor_point = Vector2Zero();
     int push[12] = {0};
 
     Rectangle playButton = {590, 245, 320, 70};
@@ -158,6 +159,15 @@ int main(void)
     {
         float dt = GetFrameTime();
         Vector2 mouse_position = GetMousePosition();
+        float anchor = Vector2Length(anchor_point);
+        float launch = Vector2Length(launch_direction);
+        float endx = 2*anchor_point.x-mouse_position.x;
+        float endy = 2*anchor_point.y-mouse_position.y;
+        Vector2 end = {endx,endy};
+        if(Vector2Length(end)>20){
+            endx = (anchor_point.x + endx)/2;
+            endy = (anchor_point.y + endy)/2;
+        }
 
         backButtonColor = CheckCollisionPointRec(mouse_position, backButton) ? backButtonColorUni : BLUE;
         if (screen == STARTING)
@@ -314,7 +324,7 @@ int main(void)
                     }
                 }
             }
-
+            
             if (is_dragging)
             {
                 dragged = Vector2Subtract(mouse_position, anchor_point);
@@ -325,6 +335,7 @@ int main(void)
                     power = max_power;
                 }
             }
+            
             if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && is_dragging)
             {
                 is_dragging = false;
@@ -392,6 +403,8 @@ int main(void)
                             ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
                         }
                     }
+                    anchor=0;
+                    launch = 0;
                 }
                 for (int i = 0; i < 12; i++)
                 {
@@ -577,6 +590,14 @@ int main(void)
                 DrawCircleV(positions[i], playerRadius, (i < 6) ? BLUE : RED);
             }
             DrawCircleV(ball, ballRadius, RAYWHITE);
+            if(anchor != 0){
+                DrawLineV(mouse_position,anchor_point,GRAY);
+                
+            }
+            if(launch != 0){
+                DrawLine(anchor_point.x,anchor_point.y,endx,endy,GRAY);
+                
+            }
             
             DrawText("Football 2D", 650, 50, 50, BLUE);
             DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 100, 30, BLACK);
