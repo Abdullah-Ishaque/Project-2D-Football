@@ -38,7 +38,12 @@ int main(void)
     Texture2D sakib = LoadTexture("resources/Sakib_36.png");
     Texture2D ishaque = LoadTexture("resources/Ishaque_58.png");
     Texture2D FormationB[5], FormationR[5];
-
+    for (int i = 0; i < 5; i++)
+    {
+        FormationB[i] = LoadTexture(TextFormat("resources/blue-formation%d.png", i + 1));
+        FormationR[i] = LoadTexture(TextFormat("resources/red-formation%d.png", i + 1));
+    }
+    
     int turn = 1;
 
     int blueScore = 0;
@@ -144,11 +149,6 @@ int main(void)
 
     int formationChoice[2] = {0, 0};
     int currentPicker = 0;
-    for (int i = 0; i < 5; i++)
-    {
-        FormationB[i] = LoadTexture(TextFormat("resources/blue-formation%d.png", i + 1));
-        FormationR[i] = LoadTexture(TextFormat("resources/red-formation%d.png", i + 1));
-    }
 
     SetTargetFPS(60);
 
@@ -577,6 +577,9 @@ int main(void)
                 DrawCircleV(positions[i], playerRadius, (i < 6) ? BLUE : RED);
             }
             DrawCircleV(ball, ballRadius, RAYWHITE);
+            
+            DrawText("Football 2D", 650, 50, 50, BLUE);
+            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 100, 30, BLACK);
         }
 
         EndDrawing();
