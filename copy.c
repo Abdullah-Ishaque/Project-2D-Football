@@ -15,7 +15,7 @@
 int main(void)
 {
     InitWindow(width, height, "Game");
-    Texture2D football_Field = LoadTexture("resources/Football_field.png");
+    Texture2D football_Field = LoadTexture("resources/Football_field1.png");
     Texture2D intro = LoadTexture("resources/Start1.png");
     Texture2D option = LoadTexture("resources/Option.png");
 
@@ -26,31 +26,29 @@ int main(void)
     int blueScore = 0;
     int redScore = 0;
 
-    Vector2 positionB1 = {90.2, 405.75};
+    // BLUE — 3-1-1
+    Vector2 positionB1 = {90.2, 405.75}; // GK
 
-    Vector2 positionB2 = {289.15, 255.75};
+    Vector2 positionB2 = {290, 220};    // Defender
+    Vector2 positionB3 = {290, 405.75}; // Defender
+    Vector2 positionB4 = {290, 590};    // Defender
 
-    Vector2 positionB3 = {289.15, 555.75};
+    Vector2 positionB5 = {470, 405.75}; // Midfielder
 
-    Vector2 positionB4 = {438.1, 405.75};
+    Vector2 positionB6 = {620, 405.75}; // Striker
 
-    Vector2 positionB5 = {587.05, 255.75};
+    // RED — 3-1-1
+    Vector2 positionR1 = {1409.8, 405.75}; // GK
 
-    Vector2 positionB6 = {587.05, 555.75};
+    Vector2 positionR2 = {1210, 220};    // Defender
+    Vector2 positionR3 = {1210, 405.75}; // Defender
+    Vector2 positionR4 = {1210, 590};    // Defender
 
-    Vector2 positionR1 = {1409.8, 405.75};
+    Vector2 positionR5 = {1030, 405.75}; // Midfielder
 
-    Vector2 positionR2 = {1210.85, 255.75};
+    Vector2 positionR6 = {880, 405.75}; // Striker
 
-    Vector2 positionR3 = {1210.85, 555.75};
-
-    Vector2 positionR4 = {1062, 405.75};
-
-    Vector2 positionR5 = {913, 255.75};
-
-    Vector2 positionR6 = {913, 555.75};
-
-    Vector2 ball = {749.5, 382};
+    Vector2 ball = {750.3, 400};
 
     Vector2 player_speed[12] = {0};
 
