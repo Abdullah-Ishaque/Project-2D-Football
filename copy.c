@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "raylib.h"
 #include "raymath.h"
 #define height 800
@@ -77,12 +78,14 @@ int main(void)
     Color backButtonColorUni = {200, 100, 40, 245};
     Color aboutText = {83, 83, 181, 245};
     //
-    Rectangle targetScoreBox = {700, 150, 100, 55};
+    Rectangle targetScoreBox = {500, 150, 150, 55};
+    Rectangle blueNameBox = {850, 150, 250, 55};
+    Rectangle redNameBox = {625, 150, 250, 55};
     Rectangle formations[FORMATION_COUNT];
     Vector2 positions[12];
     for (int i = 0; i < FORMATION_COUNT; i++)
     {
-        formations[i] = (Rectangle){formationInitial + (i * 260), 220, 240, 400};
+        formations[i] = (Rectangle){formationInitial + (i * 260), 250, 240, 400};
     }
     Vector2 blueFormations[FORMATION_COUNT][PLAYER_COUNT] =
         {
@@ -161,6 +164,17 @@ int main(void)
     bool targetScoreEditing = false;
     bool targetScoreStarted = false;
 
+    char bluePlayerName[20] = "Blue";
+    char redPlayerName[20] = "Red";
+
+    int bluePlayerNameLength = 4;
+    int redPlayerNameLength = 3;
+
+    bool blueNameEditing = false;
+    bool redNameEditing = false;
+
+    bool blueNameStarted = false;
+    bool redNameStarted = false;
     int formationChoice[2] = {0, 0};
     int currentPicker = 0;
 
@@ -172,16 +186,6 @@ int main(void)
     {
         float dt = GetFrameTime();
         Vector2 mouse_position = GetMousePosition();
-        float anchor = Vector2Length(anchor_point);
-        float launch = Vector2Length(launch_direction);
-        float endx = 2 * anchor_point.x - mouse_position.x;
-        float endy = 2 * anchor_point.y - mouse_position.y;
-        Vector2 end = {endx, endy};
-        if (Vector2Length(end) > 20)
-        {
-            endx = (anchor_point.x + endx) / 2;
-            endy = (anchor_point.y + endy) / 2;
-        }
 
         backButtonColor = CheckCollisionPointRec(mouse_position, backButton) ? backButtonColorUni : BLUE;
         if (screen == STARTING)
@@ -202,6 +206,17 @@ int main(void)
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 {
+                    strcpy(bluePlayerName, "Blue");
+                    strcpy(redPlayerName, "Red");
+
+                    bluePlayerNameLength = 4;
+                    redPlayerNameLength = 3;
+
+                    blueNameStarted = false;
+                    redNameStarted = false;
+
+                    blueNameEditing = false;
+                    redNameEditing = false;
                     screen = PLAY;
                 }
             }
@@ -233,13 +248,15 @@ int main(void)
             if (CheckCollisionPointRec(mouse_position, targetScoreBox))
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
                     targetScoreEditing = true;
 
-                if (!targetScoreStarted)
-                {
-                    targetScoreLength = 0;
-                    targetScoreText[0] = '\0';
-                    targetScoreStarted = true;
+                    if (!targetScoreStarted)
+                    {
+                        targetScoreLength = 0;
+                        targetScoreText[0] = '\0';
+                        targetScoreStarted = true;
+                    }
                 }
             }
             else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -278,6 +295,97 @@ int main(void)
                 else
                     targetScore = 0;
             }
+
+            if (!currentPicker)
+            {
+                if (CheckCollisionPointRec(mouse_position, blueNameBox))
+                {
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    {
+                        blueNameEditing = true;
+
+                        if (!blueNameStarted)
+                        {
+                            bluePlayerNameLength = 0;
+                            bluePlayerName[0] = '\0';
+                            blueNameStarted = true;
+                        }
+                    }
+                }
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    blueNameEditing = false;
+                }
+
+                if (blueNameEditing)
+                {
+                    int key = GetCharPressed();
+
+                    while (key > 0)
+                    {
+                        if (key >= 32 && key <= 126 && bluePlayerNameLength < 19)
+                        {
+                            bluePlayerName[bluePlayerNameLength] = (char)key;
+                            bluePlayerNameLength++;
+                            bluePlayerName[bluePlayerNameLength] = '\0';
+                        }
+
+                        key = GetCharPressed();
+                    }
+
+                    if (IsKeyPressed(KEY_BACKSPACE) && bluePlayerNameLength > 0)
+                    {
+                        bluePlayerNameLength--;
+                        bluePlayerName[bluePlayerNameLength] = '\0';
+                    }
+                }
+            }
+
+            else
+            {
+                if (CheckCollisionPointRec(mouse_position, redNameBox))
+                {
+                    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    {
+                        redNameEditing = true;
+
+                        if (!redNameStarted)
+                        {
+                            redPlayerNameLength = 0;
+                            redPlayerName[0] = '\0';
+                            redNameStarted = true;
+                        }
+                    }
+                }
+                else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    redNameEditing = false;
+                }
+
+                if (redNameEditing)
+                {
+                    int key = GetCharPressed();
+
+                    while (key > 0)
+                    {
+                        if (key >= 32 && key <= 126 && redPlayerNameLength < 19)
+                        {
+                            redPlayerName[redPlayerNameLength] = (char)key;
+                            redPlayerNameLength++;
+                            redPlayerName[redPlayerNameLength] = '\0';
+                        }
+
+                        key = GetCharPressed();
+                    }
+
+                    if (IsKeyPressed(KEY_BACKSPACE) && redPlayerNameLength > 0)
+                    {
+                        redPlayerNameLength--;
+                        redPlayerName[redPlayerNameLength] = '\0';
+                    }
+                }
+            }
+
             for (int j = 0; j < FORMATION_COUNT; j++)
             {
                 if (CheckCollisionPointRec(mouse_position, formations[j]))
@@ -361,6 +469,17 @@ int main(void)
         }
         // =======================================================================CREDIT==================================================================
         else if (screen == CREDIT)
+        {
+            if (CheckCollisionPointRec(mouse_position, backButton))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    screen = MENU;
+                }
+            }
+        }
+        // =======================================================================CREDIT==================================================================
+        else if (screen == GAMEOVER)
         {
             if (CheckCollisionPointRec(mouse_position, backButton))
             {
@@ -473,8 +592,6 @@ int main(void)
                             ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
                         }
                     }
-                    anchor = 0;
-                    launch = 0;
                 }
                 for (int i = 0; i < 12; i++)
                 {
@@ -528,7 +645,7 @@ int main(void)
                             player_speed[i] = Vector2Zero();
                             push[i] = 0;
                         }
-
+                        PlaySound(goalSound);
                         ball = (Vector2){749.5, 382};
                         ballSpeed = Vector2Zero();
 
@@ -536,6 +653,11 @@ int main(void)
                         is_dragging = false;
 
                         turn = 1;
+
+                        if (redScore >= targetScore)
+                        {
+                            screen = GAMEOVER;
+                        }
                     }
                     else
                     {
@@ -561,7 +683,7 @@ int main(void)
                             player_speed[i] = Vector2Zero();
                             push[i] = 0;
                         }
-
+                        PlaySound(goalSound);
                         ball = (Vector2){749.5, 382};
                         ballSpeed = Vector2Zero();
 
@@ -644,30 +766,49 @@ int main(void)
         else if (screen == PLAY)
         {
             ClearBackground(screenBackground);
-            DrawText("TARGET SCORE", 650, 70, 30, RAYWHITE);
-
-            DrawRectangleRounded(targetScoreBox, 0.2f, 10, RAYWHITE);
-
-            DrawRectangleRoundedLinesEx(targetScoreBox, 0.2f, 10, 3.0f, targetScoreEditing ? BLUE : LIGHTGRAY);
-
-            DrawText(targetScoreText, 735, 163, 25, BLACK);
 
             if (!currentPicker)
             {
+                DrawText("TARGET SCORE", 500, 110, 25, RAYWHITE);
+
+                DrawRectangleRounded(targetScoreBox,0.2f,10,RAYWHITE);
+
+                DrawRectangleRoundedLinesEx(targetScoreBox,0.2f,10,3.0f,targetScoreEditing ? BLUE : LIGHTGRAY);
+
+                DrawText(targetScoreText,555,165,25,BLACK);
+
+                DrawText("PLAYER NAME", 850, 115, 25, RAYWHITE);
+
+                DrawRectangleRounded(blueNameBox,0.2f,10,RAYWHITE);
+
+                DrawRectangleRoundedLinesEx(blueNameBox,0.2f,10,3.0f,blueNameEditing ? BLUE : LIGHTGRAY);
+
+                DrawText(bluePlayerName,875,165,25,BLACK);
+
                 for (int i = 0; i < FORMATION_COUNT; i++)
                 {
-                    DrawTexture(FormationB[i], formationInitial + (i * 260), 220, WHITE);
+                    DrawTexture(FormationB[i],formationInitial + (i * 260),250,WHITE);
                 }
             }
             else
             {
                 for (int i = 0; i < FORMATION_COUNT; i++)
                 {
-                    DrawTexture(FormationR[i], formationInitial + (i * 260), 220, WHITE);
+                    DrawTexture(FormationR[i],formationInitial + (i * 260),250,WHITE);
                 }
+
+                DrawText("PLAYER NAME",750 - MeasureText("PLAYER NAME", 25) / 2,115,25,RAYWHITE);
+
+                DrawRectangleRounded(redNameBox,0.2f,10,RAYWHITE);
+
+                DrawRectangleRoundedLinesEx(redNameBox,0.2f,10,3.0f,redNameEditing ? RED : LIGHTGRAY);
+
+                DrawText(redPlayerName,750 - MeasureText(redPlayerName, 25) / 2,680,25,BLACK);
             }
-            DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
-            DrawText("BACK", 82, 728, 30, RAYWHITE);
+
+            DrawRectangleRoundedLinesEx(backButton,0.8,0.8,3.0,backButtonColor);
+
+            DrawText("BACK",82,728,30,RAYWHITE);
         }
         else if (screen == TUTORIAL)
         {
@@ -708,24 +849,21 @@ int main(void)
                 DrawCircleV(positions[i], playerRadius, (i < 6) ? BLUE : RED);
             }
             DrawCircleV(ball, ballRadius, RAYWHITE);
-            if (anchor != 0)
-            {
-                DrawLineV(mouse_position, anchor_point, GRAY);
-            }
-            if (launch != 0)
-            {
-                DrawLine(anchor_point.x, anchor_point.y, endx, endy, GRAY);
-            }
 
             DrawText("Football 2D", 650, 20, 40, BLUE);
-            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 70, 30, BLACK);
-            DrawText(TextFormat("TARGET: %d", targetScore), 70, 50, 25, BLACK);
+            DrawText(TextFormat("%s: %d    %s: %d",bluePlayerName,blueScore,redPlayerName,redScore),620,70,30,BLACK);
+            DrawText(TextFormat("TARGET: %d", targetScore),70,50,25,BLACK);
+        }
+        else if (screen == GAMEOVER)
+        {
+            ClearBackground(screenBackground);
         }
 
         EndDrawing();
     }
     UnloadSound(kickSound);
     UnloadSound(collisionSound);
+    UnloadSound(goalSound);
     CloseAudioDevice();
     CloseWindow();
 

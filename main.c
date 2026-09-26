@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "raylib.h"
 #include "raymath.h"
 #define height 800
@@ -25,13 +26,19 @@ typedef enum
     TUTORIAL,
     ABOUT,
     CREDIT,
-    GAMEPLAY
+    GAMEPLAY,
+    GAMEOVER
 } Screen;
 Screen screen = STARTING;
 
 int main(void)
 {
     InitWindow(width, height, "Game");
+    InitAudioDevice();
+
+    Sound kickSound = LoadSound("resources/sounds/kick.wav");
+    Sound collisionSound = LoadSound("resources/sounds/collision.wav");
+    Sound goalSound = LoadSound("resources/sounds/goal.wav");
     Texture2D football_Field = LoadTexture("resources/Football_field.png");
     Texture2D intro = LoadTexture("resources/Start1.png");
     Texture2D tutorial = LoadTexture("resources/Tutorial.png");
@@ -43,7 +50,7 @@ int main(void)
         FormationB[i] = LoadTexture(TextFormat("resources/blue-formation%d.png", i + 1));
         FormationR[i] = LoadTexture(TextFormat("resources/red-formation%d.png", i + 1));
     }
-    
+
     int turn = 1;
 
     int blueScore = 0;
@@ -70,11 +77,12 @@ int main(void)
     Color backButtonColorUni = {200, 100, 40, 245};
     Color aboutText = {83, 83, 181, 245};
     //
+    Rectangle targetScoreBox = {700, 150, 100, 55};
     Rectangle formations[FORMATION_COUNT];
     Vector2 positions[12];
     for (int i = 0; i < FORMATION_COUNT; i++)
     {
-        formations[i] = (Rectangle){formationInitial + (i * 260), 170, 240, 400};
+        formations[i] = (Rectangle){formationInitial + (i * 260), 220, 240, 400};
     }
     Vector2 blueFormations[FORMATION_COUNT][PLAYER_COUNT] =
         {
@@ -147,6 +155,12 @@ int main(void)
     Rectangle creditButton = {590, 485, 320, 70};
     Rectangle backButton = {30, 715, 180, 55};
 
+    int targetScore = 5;
+    char targetScoreText[10] = "5";
+    int targetScoreLength = 1;
+    bool targetScoreEditing = false;
+    bool targetScoreStarted = false;
+
     int formationChoice[2] = {0, 0};
     int currentPicker = 0;
 
@@ -158,6 +172,16 @@ int main(void)
     {
         float dt = GetFrameTime();
         Vector2 mouse_position = GetMousePosition();
+        float anchor = Vector2Length(anchor_point);
+        float launch = Vector2Length(launch_direction);
+        float endx = 2 * anchor_point.x - mouse_position.x;
+        float endy = 2 * anchor_point.y - mouse_position.y;
+        Vector2 end = {endx, endy};
+        if (Vector2Length(end) > 20)
+        {
+            endx = (anchor_point.x + endx) / 2;
+            endy = (anchor_point.y + endy) / 2;
+        }
 
         backButtonColor = CheckCollisionPointRec(mouse_position, backButton) ? backButtonColorUni : BLUE;
         if (screen == STARTING)
@@ -206,6 +230,54 @@ int main(void)
         // =======================================================================PLAY==================================================================
         else if (screen == PLAY)
         {
+            if (CheckCollisionPointRec(mouse_position, targetScoreBox))
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                    targetScoreEditing = true;
+
+                if (!targetScoreStarted)
+                {
+                    targetScoreLength = 0;
+                    targetScoreText[0] = '\0';
+                    targetScoreStarted = true;
+                }
+            }
+            else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            {
+                targetScoreEditing = false;
+            }
+
+            if (targetScoreEditing)
+            {
+                int key = GetCharPressed();
+
+                while (key > 0)
+                {
+                    if (key >= '0' && key <= '9' && targetScoreLength < 9)
+                    {
+                        targetScoreText[targetScoreLength] = (char)key;
+                        targetScoreLength++;
+                        targetScoreText[targetScoreLength] = '\0';
+                    }
+                    key = GetCharPressed();
+                }
+
+                if (IsKeyPressed(KEY_BACKSPACE) && targetScoreLength > 0)
+                {
+                    targetScoreLength--;
+                    targetScoreText[targetScoreLength] = '\0';
+                }
+
+                if (targetScoreLength > 0)
+                {
+                    targetScore = atoi(targetScoreText);
+
+                    if (targetScore < 1)
+                        targetScore = 1;
+                }
+                else
+                    targetScore = 0;
+            }
             for (int j = 0; j < FORMATION_COUNT; j++)
             {
                 if (CheckCollisionPointRec(mouse_position, formations[j]))
@@ -214,6 +286,8 @@ int main(void)
                     {
                         if (!currentPicker)
                         {
+                            formationChoice[0] = j;
+
                             for (int l = 0; l < PLAYER_COUNT; l++)
                             {
                                 positions[l] = blueFormations[j][l];
@@ -222,10 +296,13 @@ int main(void)
                         }
                         else
                         {
+                            formationChoice[1] = j;
+
                             for (int m = 0, n = 6; m < PLAYER_COUNT; m++, n++)
-                            {
                                 positions[n] = redFormations[j][m];
-                            }
+
+                            currentPicker = 0;
+                            screen = GAMEPLAY;
                             if (CheckCollisionPointRec(mouse_position, backButton))
                             {
                                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -341,6 +418,8 @@ int main(void)
                             player_speed[i] = Vector2Scale(launch_direction, power);
                         }
                     }
+
+                    PlaySound(kickSound);
                     shot_in_progress = true;
                 }
             }
@@ -369,6 +448,8 @@ int main(void)
 
                                 player_speed[i] = Vector2Subtract(player_speed[i], impulse);
                                 player_speed[j] = Vector2Add(player_speed[j], impulse);
+
+                                PlaySound(collisionSound);
                             }
                         }
                     }
@@ -392,6 +473,8 @@ int main(void)
                             ballSpeed = Vector2Add(ballSpeed, Vector2Scale(impulse, 9.66f));
                         }
                     }
+                    anchor = 0;
+                    launch = 0;
                 }
                 for (int i = 0; i < 12; i++)
                 {
@@ -434,8 +517,25 @@ int main(void)
                     {
                         redScore++;
 
+                        for (int i = 0; i < PLAYER_COUNT; i++)
+                        {
+                            positions[i] = blueFormations[formationChoice[0]][i];
+                            positions[i + PLAYER_COUNT] = redFormations[formationChoice[1]][i];
+                        }
+
+                        for (int i = 0; i < 12; i++)
+                        {
+                            player_speed[i] = Vector2Zero();
+                            push[i] = 0;
+                        }
+
                         ball = (Vector2){749.5, 382};
                         ballSpeed = Vector2Zero();
+
+                        shot_in_progress = false;
+                        is_dragging = false;
+
+                        turn = 1;
                     }
                     else
                     {
@@ -450,8 +550,30 @@ int main(void)
                     {
                         blueScore++;
 
+                        for (int i = 0; i < PLAYER_COUNT; i++)
+                        {
+                            positions[i] = blueFormations[formationChoice[0]][i];
+                            positions[i + PLAYER_COUNT] = redFormations[formationChoice[1]][i];
+                        }
+
+                        for (int i = 0; i < 12; i++)
+                        {
+                            player_speed[i] = Vector2Zero();
+                            push[i] = 0;
+                        }
+
                         ball = (Vector2){749.5, 382};
                         ballSpeed = Vector2Zero();
+
+                        shot_in_progress = false;
+                        is_dragging = false;
+
+                        turn = 2;
+
+                        if (blueScore >= targetScore)
+                        {
+                            screen = GAMEOVER;
+                        }
                     }
                     else
                     {
@@ -488,6 +610,7 @@ int main(void)
                 {
                     turn++;
                     shot_in_progress = false;
+                    is_dragging = false;
 
                     for (int i = 0; i < 12; i++)
                         push[i] = 0;
@@ -521,18 +644,26 @@ int main(void)
         else if (screen == PLAY)
         {
             ClearBackground(screenBackground);
+            DrawText("TARGET SCORE", 650, 70, 30, RAYWHITE);
+
+            DrawRectangleRounded(targetScoreBox, 0.2f, 10, RAYWHITE);
+
+            DrawRectangleRoundedLinesEx(targetScoreBox, 0.2f, 10, 3.0f, targetScoreEditing ? BLUE : LIGHTGRAY);
+
+            DrawText(targetScoreText, 735, 163, 25, BLACK);
+
             if (!currentPicker)
             {
                 for (int i = 0; i < FORMATION_COUNT; i++)
                 {
-                    DrawTexture(FormationB[i], formationInitial + (i * 260), 170, WHITE);
+                    DrawTexture(FormationB[i], formationInitial + (i * 260), 220, WHITE);
                 }
             }
             else
             {
                 for (int i = 0; i < FORMATION_COUNT; i++)
                 {
-                    DrawTexture(FormationR[i], formationInitial + (i * 260), 170, WHITE);
+                    DrawTexture(FormationR[i], formationInitial + (i * 260), 220, WHITE);
                 }
             }
             DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
@@ -577,14 +708,25 @@ int main(void)
                 DrawCircleV(positions[i], playerRadius, (i < 6) ? BLUE : RED);
             }
             DrawCircleV(ball, ballRadius, RAYWHITE);
-            
-            DrawText("Football 2D", 650, 50, 50, BLUE);
-            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 100, 30, BLACK);
+            if (anchor != 0)
+            {
+                DrawLineV(mouse_position, anchor_point, GRAY);
+            }
+            if (launch != 0)
+            {
+                DrawLine(anchor_point.x, anchor_point.y, endx, endy, GRAY);
+            }
+
+            DrawText("Football 2D", 650, 20, 40, BLUE);
+            DrawText(TextFormat("Blue: %d.   Red: %d", blueScore, redScore), 620, 70, 30, BLACK);
+            DrawText(TextFormat("TARGET: %d", targetScore), 70, 50, 25, BLACK);
         }
 
         EndDrawing();
     }
-
+    UnloadSound(kickSound);
+    UnloadSound(collisionSound);
+    CloseAudioDevice();
     CloseWindow();
 
     return 0;
