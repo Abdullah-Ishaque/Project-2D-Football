@@ -161,7 +161,12 @@ int main(void)
     Rectangle scoreBox = {475, 285, 550, 140};
     Rectangle mainMenuButton = {470, 500, 250, 70};
     Rectangle rematchButton = {780, 500, 250, 70};
-    // Rectangle gameOverPanel = {400, 150, 700, 500};
+    Rectangle raylibCreditBox = (Rectangle){500, 230, 500, 60};
+    Rectangle soundPicCreditBox = (Rectangle){500, 310, 500, 60};
+    Rectangle colorCodeCreditBox = (Rectangle){500, 390, 500, 60};
+    Rectangle imageResizerCreditBox = (Rectangle){500, 470, 500, 60};
+    Rectangle turnBox = {1180, 25, 260, 55};
+    Rectangle ballStateBox = {1180, 90, 260, 50};
 
     int targetScore = 5;
     char targetScoreText[10] = "5";
@@ -828,7 +833,7 @@ int main(void)
 
                 DrawRectangleRoundedLinesEx(redNameBox, 0.2f, 10, 3.0f, redNameEditing ? RED : LIGHTGRAY);
 
-                DrawText(redPlayerName, 750 - MeasureText(redPlayerName, 25) / 2, 680, 25, BLACK);
+                DrawText(redPlayerName, 750 - MeasureText(redPlayerName, 25) / 2, 165, 25, BLACK);
             }
 
             DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
@@ -863,7 +868,29 @@ int main(void)
         else if (screen == CREDIT)
         {
             ClearBackground(screenBackground);
+
+            DrawText("CREDITS", 650, 80, 45, RAYWHITE);
+
+            DrawText("This game was created using:", 560, 150, 25, LIGHTGRAY);
+
+            DrawRectangleRounded(raylibCreditBox, 0.2f, 10, RAYWHITE);
+
+            DrawText("raylib", 700, 225, 30, BLACK);
+
+            DrawRectangleRounded(soundPicCreditBox, 0.2f, 10, RAYWHITE);
+
+            DrawText("SoundPic / FreeSound", 625, 295, 30, BLACK);
+
+            DrawRectangleRounded(colorCodeCreditBox, 0.2f, 10, RAYWHITE);
+
+            DrawText("HTML Color Codes", 650, 365, 30, BLACK);
+
+            DrawRectangleRounded(imageResizerCreditBox, 0.2f, 10, RAYWHITE);
+
+            DrawText("Image Resizer", 670, 435, 30, BLACK);
+
             DrawRectangleRoundedLinesEx(backButton, 0.8, 0.8, 3.0, backButtonColor);
+
             DrawText("BACK", 82, 728, 30, RAYWHITE);
         }
         else if (screen == GAMEPLAY)
@@ -886,6 +913,25 @@ int main(void)
             DrawText("Football 2D", 650, 20, 40, BLUE);
             DrawText(TextFormat("%s: %d    %s: %d", bluePlayerName, blueScore, redPlayerName, redScore), 620, 70, 30, BLACK);
             DrawText(TextFormat("TARGET: %d", targetScore), 70, 50, 25, BLACK);
+
+            DrawRectangleRounded(turnBox, 0.2f, 10, menuBackground);
+
+            if (turn % 2 == 1)
+            {
+                DrawRectangleRoundedLinesEx(turnBox, 0.2f, 10, 3.0f, BLUE);
+                DrawText("TURN:", 1200, 40, 24, BLUE);
+                DrawText(bluePlayerName, 1285, 40, 24, BLUE);
+            }
+            else if (turn % 2 == 0)
+            {
+                DrawRectangleRoundedLinesEx(turnBox, 0.2f, 10, 3.0f, RED);
+                DrawText("TURN:", 1200, 40, 24, RED);
+                DrawText(bluePlayerName, 1285, 40, 24, RED);
+            }
+            if (shot_in_progress)
+            {
+                DrawText("BALL IN PLAY", 1235, 103, 22, textColor);
+            }
         }
         else if (screen == GAMEOVER)
         {
