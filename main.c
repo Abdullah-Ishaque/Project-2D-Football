@@ -765,6 +765,8 @@ int main(void)
             {
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
                 {
+                    blueScore = 0;
+                    redScore = 0;
                     screen = GAMEPLAY;
                 }
             }
@@ -926,7 +928,7 @@ int main(void)
             {
                 DrawRectangleRoundedLinesEx(turnBox, 0.2f, 10, 3.0f, RED);
                 DrawText("TURN:", 1200, 40, 24, RED);
-                DrawText(bluePlayerName, 1285, 40, 24, RED);
+                DrawText(redPlayerName, 1285, 40, 24, RED);
             }
             if (shot_in_progress)
             {
